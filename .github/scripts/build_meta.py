@@ -34,7 +34,6 @@ def parse_pdfinfo(path: Path):
     author = None
     pages = None
     try:
-        # pdfinfo output is plain text; parse lines
         out = subprocess.check_output(['pdfinfo', str(path)], text=True, stderr=subprocess.STDOUT)
         for line in out.splitlines():
             if line.startswith('Title:'):
@@ -53,10 +52,8 @@ def parse_pdfinfo(path: Path):
 
 def build_tags(name: str, rel: Path):
     tokens = []
-    # filename tokens without extension
     stem = Path(name).stem
     tokens.extend([t for t in CH_SEP.split(stem) if t])
-    # path segments
     for seg in rel.parent.parts:
         tokens.extend([t for t in CH_SEP.split(seg) if t])
     norm = []
@@ -69,7 +66,6 @@ def build_tags(name: str, rel: Path):
         if len(s) <= 1:
             continue
         norm.append(s)
-    # unique preserve order
     seen = set()
     res = []
     for t in norm:
@@ -82,20 +78,16 @@ for p in sorted(PDF_SRC.rglob('*.pdf')):
     rel = p.relative_to(PDF_SRC)
     rel_str = str(rel).replace('\\', '/')
 
-    # Copy PDF to docs/pdfs/
     dst_pdf = PDF_DST / rel
     dst_pdf.parent.mkdir(parents=True, exist_ok=True)
-    # Copy only when changed
     if (not dst_pdf.exists()) or (p.stat().st_mtime > dst_pdf.stat().st_mtime) or (p.stat().st_size != dst_pdf.stat().st_size):
         shutil.copy2(p, dst_pdf)
 
-    # Metadata
     title, author, pages = parse_pdfinfo(p)
     size_bytes = p.stat().st_size
     mtime = int(p.stat().st_mtime)
     tags = build_tags(p.name, rel)
 
-    # Generate cover using pdftoppm (first page)
     rel_no_ext = rel.with_suffix('')
     cover_png = COVERS / (str(rel_no_ext) + '.png')
     cover_jpg = COVERS / (str(rel_no_ext) + '.jpg')
@@ -128,7 +120,7 @@ for p in sorted(PDF_SRC.rglob('*.pdf')):
 
     cover_rel = None
     if cover_file and cover_file.exists():
-        cover_rel = './covers/' + str(rel_no_ext).replace('\\', '/') + cover_file.suffix
+        cover_rel = '/covers/' + str(rel_no_ext).replace('\\', '/') + cover_file.suffix
 
     items.append({
         'id': rel_str,
@@ -141,11 +133,10 @@ for p in sorted(PDF_SRC.rglob('*.pdf')):
         'tags': tags,
         'path': rel_str,
         'displayPath': str(rel.parent).replace('\\', '/'),
-        'url': './pdfs/' + rel_str,
+        'url': '/pdfs/' + rel_str,
         'cover': cover_rel,
     })
 
-# Sort items by path
 items.sort(key=lambda x: x['path'].lower())
 
 META.parent.mkdir(parents=True, exist_ok=True)

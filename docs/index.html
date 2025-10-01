@@ -44,7 +44,7 @@
     aside { border-right: 1px solid var(--border); background: var(--panel-2); overflow: auto; }
     main { display: grid; grid-template-rows: auto auto 1fr; }
 
-    .filters { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+    .filters { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); flex-wrap: wrap; }
     .chips { display: flex; gap: 6px; flex-wrap: wrap; }
     .chip { padding: 4px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text); }
     .chip.active { background: #1f2b55; border-color: var(--primary); }
@@ -61,6 +61,7 @@
     .badges { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
     .fav { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.5); border: 1px solid var(--border); color: #ffd966; border-radius: 999px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
     .fav.active { background: #33280a; border-color: #ffcf66; }
+    .openbtn { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,.5); border: 1px solid var(--border); color: #a4d0ff; border-radius: 999px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
 
     .tree { padding: 8px 10px; }
     .tree details { border-radius: 8px; }
@@ -75,6 +76,7 @@
     .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel); position: sticky; top: 0; z-index: 5; }
     .btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
     .btn:hover { border-color: var(--primary); }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
     .hint { color: var(--muted); margin-left: auto; font-size: 12px; }
 
     .related { padding: 8px 12px; border-bottom: 1px solid var(--border); background: #0f1733; color: var(--muted); font-size: 13px; }
@@ -100,6 +102,8 @@
       <div class="filters">
         <div class="chips" id="tagChips"></div>
         <button class="btn" id="toggleFav">仅看收藏</button>
+        <button class="btn" id="openNative" disabled>在浏览器打开</button>
+        <button class="btn" id="copyLink" disabled>复制链接</button>
         <span class="hint">回车打开，F 收藏/取消，Esc 清空搜索</span>
       </div>
       <div class="related" id="related" style="display:none">
@@ -113,7 +117,7 @@
 
   <script>
     const state = {
-      items: [], // flat list
+      items: [],
       filtered: [],
       treeRoot: {},
       selected: null,
@@ -130,9 +134,11 @@
     const elTagChips = document.getElementById('tagChips');
     const elRelated = document.getElementById('related');
     const elRelItems = document.getElementById('relItems');
+    const btnOpenNative = document.getElementById('openNative');
+    const btnCopyLink = document.getElementById('copyLink');
 
     const LS_FAV = 'pdf:favorites';
-    const LS_PROGRESS = 'pdf:progress'; // { [path]: page }
+    const LS_PROGRESS = 'pdf:progress';
 
     function loadFavs() { return new Set(JSON.parse(localStorage.getItem(LS_FAV) || '[]')); }
     function saveFavs(s) { localStorage.setItem(LS_FAV, JSON.stringify(Array.from(s))); }
@@ -142,9 +148,25 @@
     let favs = loadFavs();
     let progress = loadProgress();
 
+    function normalizeUrl(u) {
+      if (!u) return u;
+      if (u.startsWith('/pdfs/')) return u;
+      if (u.startsWith('./pdfs/')) return u.replace('./pdfs/', '/pdfs/');
+      if (u.startsWith('pdfs/')) return '/' + u;
+      return u;
+    }
+    function normalizeCover(u) {
+      if (!u) return u;
+      if (u.startsWith('/covers/')) return u;
+      if (u.startsWith('./covers/')) return u.replace('./covers/', '/covers/');
+      if (u.startsWith('covers/')) return '/' + u;
+      return u;
+    }
+
     fetch('./meta.json?_=' + Date.now()).then(r => r.json()).then(meta => {
-      state.items = Array.isArray(meta.items) ? meta.items : [];
-      // build tag counts
+      let items = Array.isArray(meta.items) ? meta.items : [];
+      items = items.map(it => ({ ...it, url: normalizeUrl(it.url), cover: normalizeCover(it.cover) }));
+      state.items = items;
       const counts = new Map();
       for (const it of state.items) {
         const tags = Array.isArray(it.tags) ? it.tags : [];
@@ -196,30 +218,25 @@
     function renderTree() {
       elTree.innerHTML = detailsNode(state.treeRoot);
       elTree.querySelectorAll('a[data-file]').forEach(a => {
-        a.addEventListener('click', (e) => {
-          e.preventDefault();
-          const p = a.getAttribute('data-file');
-          selectFile(p);
-        });
+        a.addEventListener('click', (e) => { e.preventDefault(); const p = a.getAttribute('data-file'); selectFile(p); });
       });
     }
 
     function matchesFilters(it) {
-      // search
       const q = elSearch.value.trim().toLowerCase();
       if (q) {
         const hay = [it.title||'', it.name||'', it.displayPath||it.path||'', (it.tags||[]).join(' ')].join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      // tags
       if (state.activeTags.size) {
         const tset = new Set(it.tags || []);
         for (const t of state.activeTags) { if (!tset.has(t)) return false; }
       }
-      // favorites
       if (state.onlyFav && !favs.has(it.path)) return false;
       return true;
     }
+
+    function fullUrl(rel) { return location.origin + rel; }
 
     function renderCards() {
       const list = state.items.filter(matchesFilters);
@@ -227,43 +244,27 @@
       elCount.textContent = `${list.length} 个文件`;
       elCards.innerHTML = list.map(it => {
         const cov = it.cover ? it.cover : '';
-        const covHtml = cov ? `<img loading="lazy" src="${cov}" alt="${it.name}"/>` : `<span>无封面</span>`;
+        const covHtml = cov ? `<img loading=\"lazy\" src=\"${cov}\" alt=\"${it.name}\"/>` : `<span>无封面</span>`;
         const fav = favs.has(it.path) ? 'active' : '';
         const pages = it.pages ? `${it.pages}页` : '';
         return `
-          <div class="card" data-file="${it.path}">
-            <div class="fav ${fav}" data-fav="${it.path}">★</div>
-            <div class="thumb">${covHtml}</div>
-            <div class="meta">
-              <div class="name">${it.title || it.name}</div>
-              <div class="badges"><span>${pages}</span></div>
-              <div class="path">${it.displayPath || it.path}</div>
+          <div class=\"card\" data-file=\"${it.path}\" data-url=\"${it.url}\">
+            <div class=\"openbtn\" title=\"在浏览器打开\" data-open=\"${it.url}\">↗</div>
+            <div class=\"fav ${fav}\" data-fav=\"${it.path}\">★</div>
+            <div class=\"thumb\">${covHtml}</div>
+            <div class=\"meta\">
+              <div class=\"name\">${it.title || it.name}</div>
+              <div class=\"badges\"><span>${pages}</span></div>
+              <div class=\"path\">${it.displayPath || it.path}</div>
             </div>
           </div>`;
       }).join('');
-      elCards.querySelectorAll('.card').forEach(c => {
-        c.addEventListener('click', (e) => {
-          if (e.target && e.target.matches('.fav')) return; // fav handled separately
-          selectFile(c.getAttribute('data-file'));
-        });
-      });
-      elCards.querySelectorAll('.fav').forEach(f => {
-        f.addEventListener('click', (e) => {
-          const p = f.getAttribute('data-fav');
-          if (favs.has(p)) favs.delete(p); else favs.add(p);
-          saveFavs(favs);
-          renderCards();
-        });
-      });
+      elCards.querySelectorAll('.card').forEach(c => { c.addEventListener('click', (e) => { if (e.target && (e.target.matches('.fav') || e.target.matches('.openbtn'))) return; selectFile(c.getAttribute('data-file')); }); });
+      elCards.querySelectorAll('.fav').forEach(f => { f.addEventListener('click', (e) => { const p = f.getAttribute('data-fav'); if (favs.has(p)) favs.delete(p); else favs.add(p); saveFavs(favs); renderCards(); }); });
+      elCards.querySelectorAll('.openbtn').forEach(o => { o.addEventListener('click', (e) => { e.stopPropagation(); const u = o.getAttribute('data-open'); window.open(u, '_blank'); }); });
     }
 
-    function similarScore(a, b) {
-      const ta = new Set(a.tags || []);
-      const tb = new Set(b.tags || []);
-      let inter = 0;
-      for (const t of ta) if (tb.has(t)) inter++;
-      return inter;
-    }
+    function similarScore(a, b) { const ta = new Set(a.tags || []); const tb = new Set(b.tags || []); let inter = 0; for (const t of ta) if (tb.has(t)) inter++; return inter; }
 
     function renderRelated(base) {
       const others = state.items.filter(x => x.path !== base.path);
@@ -271,63 +272,49 @@
       const top = others.filter(x => similarScore(x, base) > 0).slice(0, 10);
       if (!top.length) { elRelated.style.display = 'none'; return; }
       elRelated.style.display = '';
-      elRelItems.innerHTML = top.map(it => `<span class="rel-item" data-file="${it.path}">${it.title || it.name}</span>`).join('');
+      elRelItems.innerHTML = top.map(it => `<span class=\"rel-item\" data-file=\"${it.path}\">${it.title || it.name}</span>`).join('');
       elRelItems.querySelectorAll('.rel-item').forEach(n => n.addEventListener('click', () => selectFile(n.getAttribute('data-file'))));
     }
 
     function renderTagChips() {
       const entries = Array.from(state.tagCounts.entries()).sort((a,b)=> b[1]-a[1]).slice(0, 60);
-      elTagChips.innerHTML = entries.map(([t,c]) => `<span class="chip ${state.activeTags.has(t)?'active':''}" data-tag="${t}">${t}<span>${c}</span></span>`).join('');
-      elTagChips.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
-        const t = ch.getAttribute('data-tag');
-        if (state.activeTags.has(t)) state.activeTags.delete(t); else state.activeTags.add(t);
-        renderAll();
-      }));
+      elTagChips.innerHTML = entries.map(([t,c]) => `<span class=\"chip ${state.activeTags.has(t)?'active':''}\" data-tag=\"${t}\">${t}<span>${c}</span></span>`).join('');
+      elTagChips.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => { const t = ch.getAttribute('data-tag'); if (state.activeTags.has(t)) state.activeTags.delete(t); else state.activeTags.add(t); renderAll(); }));
     }
 
-    function renderAll() {
-      renderTagChips();
-      renderTree();
-      renderCards();
-    }
+    function renderAll() { renderTagChips(); renderTree(); renderCards(); updateOpenButtons(); }
 
     function selectFile(path) {
       const item = state.items.find(x => x.path === path);
       if (!item) return;
       state.selected = item;
-      const lastPage = progress[path] || 1;
+      const lastPage = (loadProgress()[path] || 1);
       const url = `./pdf-viewer/index.html?file=${encodeURIComponent(item.url)}&page=${lastPage}`;
       elViewer.setAttribute('src', url);
       location.hash = encodeURIComponent(item.path);
       renderRelated(item);
+      updateOpenButtons();
     }
 
-    function restoreFromHash() {
-      const h = location.hash.startsWith('#') ? decodeURIComponent(location.hash.slice(1)) : '';
-      if (h) selectFile(h);
+    function updateOpenButtons() {
+      const has = !!state.selected;
+      btnOpenNative.disabled = !has;
+      btnCopyLink.disabled = !has;
     }
+
+    function restoreFromHash() { const h = location.hash.startsWith('#') ? decodeURIComponent(location.hash.slice(1)) : ''; if (h) selectFile(h); }
 
     window.addEventListener('hashchange', restoreFromHash);
-
     document.getElementById('expandAll').addEventListener('click', () => { elTree.querySelectorAll('details').forEach(d => d.open = true); });
     document.getElementById('collapseAll').addEventListener('click', () => { elTree.querySelectorAll('details').forEach(d => d.open = false); });
-
     document.getElementById('toggleFav').addEventListener('click', () => { state.onlyFav = !state.onlyFav; renderCards(); });
-
     elSearch.addEventListener('input', () => { renderCards(); });
-    window.addEventListener('keydown', (e) => {
-      if (e.key === '/') { e.preventDefault(); elSearch.focus(); return; }
-      if (e.key === 'Escape') { elSearch.value=''; renderCards(); return; }
-    });
+    window.addEventListener('keydown', (e) => { if (e.key === '/') { e.preventDefault(); elSearch.focus(); return; } if (e.key === 'Escape') { elSearch.value=''; renderCards(); return; } });
 
-    // Receive progress updates from viewer
-    window.addEventListener('message', (ev) => {
-      const msg = ev.data || {};
-      if (msg && msg.type === 'progress' && msg.path && msg.page) {
-        progress[msg.path] = msg.page;
-        saveProgress(progress);
-      }
-    });
+    window.addEventListener('message', (ev) => { const msg = ev.data || {}; if (msg && msg.type === 'progress' && msg.path && msg.page) { const prog = loadProgress(); prog[msg.path] = msg.page; localStorage.setItem('pdf:progress', JSON.stringify(prog)); }});
+
+    btnOpenNative.addEventListener('click', () => { if (!state.selected) return; window.open(state.selected.url, '_blank'); });
+    btnCopyLink.addEventListener('click', async () => { if (!state.selected) return; const link = fullUrl(state.selected.url); try { await navigator.clipboard.writeText(link); btnCopyLink.textContent = '已复制'; setTimeout(()=>btnCopyLink.textContent='复制链接', 1000); } catch { prompt('复制失败，手动复制：', link); } });
   </script>
 </body>
 </html>
