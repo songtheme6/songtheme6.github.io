@@ -16,6 +16,8 @@
       --border: #223058;
       --card: #162246;
       --hover: #1c2b59;
+      --danger: #ff7575;
+      --warning: #ffcf66;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
@@ -38,45 +40,53 @@
       flex: 1; background: transparent; border: none; outline: none; color: var(--text);
       font-size: 14px;
     }
-    .layout {
-      display: grid; grid-template-columns: 320px 1fr; height: calc(100% - 58px);
-    }
-    aside {
-      border-right: 1px solid var(--border); background: var(--panel-2); overflow: auto;
-    }
-    main { display: grid; grid-template-rows: auto 1fr; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 12px; overflow: auto; background: var(--panel-2); border-bottom: 1px solid var(--border); }
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-      display: flex; flex-direction: column; cursor: pointer; transition: .15s ease;
-    }
+    .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100% - 58px); }
+    aside { border-right: 1px solid var(--border); background: var(--panel-2); overflow: auto; }
+    main { display: grid; grid-template-rows: auto auto 1fr; }
+
+    .filters { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { padding: 4px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text); }
+    .chip.active { background: #1f2b55; border-color: var(--primary); }
+    .chip span { opacity: .7; margin-left: 4px; font-variant-numeric: tabular-nums; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; padding: 12px; overflow: auto; background: var(--panel-2); border-bottom: 1px solid var(--border); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: .15s ease; position: relative; }
     .card:hover { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(106,163,255,.2) inset; }
     .thumb { aspect-ratio: 3/4; background: #0a0f22; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
     .thumb img { width: 100%; height: 100%; object-fit: cover; background: #000; }
-    .meta { padding: 8px; display: grid; gap: 6px; }
+    .meta { padding: 8px; display: grid; gap: 4px; }
     .name { font-size: 13px; line-height: 1.35; word-break: break-word; }
     .path { color: var(--muted); font-size: 12px; }
+    .badges { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+    .fav { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.5); border: 1px solid var(--border); color: #ffd966; border-radius: 999px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    .fav.active { background: #33280a; border-color: #ffcf66; }
+
     .tree { padding: 8px 10px; }
     .tree details { border-radius: 8px; }
     .tree summary { cursor: pointer; padding: 6px 8px; border-radius: 8px; }
     .tree summary:hover { background: var(--hover); }
     .tree a { color: var(--text); text-decoration: none; display: block; padding: 6px 8px; border-radius: 8px; }
     .tree a:hover { background: var(--hover); }
+
     .viewer { border-top: 1px solid var(--border); }
     iframe { width: 100%; height: 100%; border: 0; background: #0b0f20; }
-    .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel);
-      position: sticky; top: 0; z-index: 5; }
-    .toolbar .count { color: var(--muted); }
+
+    .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel); position: sticky; top: 0; z-index: 5; }
     .btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
     .btn:hover { border-color: var(--primary); }
     .hint { color: var(--muted); margin-left: auto; font-size: 12px; }
+
+    .related { padding: 8px 12px; border-bottom: 1px solid var(--border); background: #0f1733; color: var(--muted); font-size: 13px; }
+    .rel-items { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .rel-item { background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px; cursor: pointer; }
   </style>
 </head>
 <body>
   <header>
     <h1>📚 PDF 图书馆</h1>
     <div class="search">
-      <input id="search" type="search" placeholder="搜索文件名或路径…" />
+      <input id="search" type="search" placeholder="搜索标题/文件名/路径/标签… (按 / 聚焦)" />
       <span class="count" id="count"></span>
     </div>
     <button class="btn" id="expandAll">全部展开</button>
@@ -87,6 +97,15 @@
       <div class="tree" id="tree"></div>
     </aside>
     <main>
+      <div class="filters">
+        <div class="chips" id="tagChips"></div>
+        <button class="btn" id="toggleFav">仅看收藏</button>
+        <span class="hint">回车打开，F 收藏/取消，Esc 清空搜索</span>
+      </div>
+      <div class="related" id="related" style="display:none">
+        <div>相关书籍</div>
+        <div class="rel-items" id="relItems"></div>
+      </div>
       <div class="cards" id="cards"></div>
       <div class="viewer"><iframe id="viewer" src="./pdf-viewer/index.html"></iframe></div>
     </main>
@@ -98,6 +117,9 @@
       filtered: [],
       treeRoot: {},
       selected: null,
+      tagCounts: new Map(),
+      activeTags: new Set(),
+      onlyFav: false,
     };
 
     const elTree = document.getElementById('tree');
@@ -105,21 +127,40 @@
     const elViewer = document.getElementById('viewer');
     const elSearch = document.getElementById('search');
     const elCount = document.getElementById('count');
+    const elTagChips = document.getElementById('tagChips');
+    const elRelated = document.getElementById('related');
+    const elRelItems = document.getElementById('relItems');
+
+    const LS_FAV = 'pdf:favorites';
+    const LS_PROGRESS = 'pdf:progress'; // { [path]: page }
+
+    function loadFavs() { return new Set(JSON.parse(localStorage.getItem(LS_FAV) || '[]')); }
+    function saveFavs(s) { localStorage.setItem(LS_FAV, JSON.stringify(Array.from(s))); }
+    function loadProgress() { try { return JSON.parse(localStorage.getItem(LS_PROGRESS) || '{}'); } catch { return {}; } }
+    function saveProgress(p) { localStorage.setItem(LS_PROGRESS, JSON.stringify(p)); }
+
+    let favs = loadFavs();
+    let progress = loadProgress();
 
     fetch('./meta.json?_=' + Date.now()).then(r => r.json()).then(meta => {
       state.items = Array.isArray(meta.items) ? meta.items : [];
+      // build tag counts
+      const counts = new Map();
+      for (const it of state.items) {
+        const tags = Array.isArray(it.tags) ? it.tags : [];
+        for (const t of tags) counts.set(t, (counts.get(t) || 0) + 1);
+      }
+      state.tagCounts = counts;
       buildTree();
-      render();
+      renderAll();
       restoreFromHash();
     }).catch(() => {
       state.items = [];
       buildTree();
-      render();
+      renderAll();
     });
 
-    function pathSegments(p) {
-      return p.split('/').filter(Boolean);
-    }
+    function pathSegments(p) { return p.split('/').filter(Boolean); }
 
     function buildTree() {
       const root = { name: '', children: new Map(), files: [] };
@@ -163,27 +204,89 @@
       });
     }
 
+    function matchesFilters(it) {
+      // search
+      const q = elSearch.value.trim().toLowerCase();
+      if (q) {
+        const hay = [it.title||'', it.name||'', it.displayPath||it.path||'', (it.tags||[]).join(' ')].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      // tags
+      if (state.activeTags.size) {
+        const tset = new Set(it.tags || []);
+        for (const t of state.activeTags) { if (!tset.has(t)) return false; }
+      }
+      // favorites
+      if (state.onlyFav && !favs.has(it.path)) return false;
+      return true;
+    }
+
     function renderCards() {
-      const list = state.filtered.length ? state.filtered : state.items;
+      const list = state.items.filter(matchesFilters);
+      state.filtered = list;
       elCount.textContent = `${list.length} 个文件`;
       elCards.innerHTML = list.map(it => {
         const cov = it.cover ? it.cover : '';
         const covHtml = cov ? `<img loading="lazy" src="${cov}" alt="${it.name}"/>` : `<span>无封面</span>`;
+        const fav = favs.has(it.path) ? 'active' : '';
+        const pages = it.pages ? `${it.pages}页` : '';
         return `
           <div class="card" data-file="${it.path}">
+            <div class="fav ${fav}" data-fav="${it.path}">★</div>
             <div class="thumb">${covHtml}</div>
             <div class="meta">
-              <div class="name">${it.name}</div>
+              <div class="name">${it.title || it.name}</div>
+              <div class="badges"><span>${pages}</span></div>
               <div class="path">${it.displayPath || it.path}</div>
             </div>
           </div>`;
       }).join('');
       elCards.querySelectorAll('.card').forEach(c => {
-        c.addEventListener('click', () => selectFile(c.getAttribute('data-file')));
+        c.addEventListener('click', (e) => {
+          if (e.target && e.target.matches('.fav')) return; // fav handled separately
+          selectFile(c.getAttribute('data-file'));
+        });
+      });
+      elCards.querySelectorAll('.fav').forEach(f => {
+        f.addEventListener('click', (e) => {
+          const p = f.getAttribute('data-fav');
+          if (favs.has(p)) favs.delete(p); else favs.add(p);
+          saveFavs(favs);
+          renderCards();
+        });
       });
     }
 
-    function render() {
+    function similarScore(a, b) {
+      const ta = new Set(a.tags || []);
+      const tb = new Set(b.tags || []);
+      let inter = 0;
+      for (const t of ta) if (tb.has(t)) inter++;
+      return inter;
+    }
+
+    function renderRelated(base) {
+      const others = state.items.filter(x => x.path !== base.path);
+      others.sort((x,y) => similarScore(y, base) - similarScore(x, base));
+      const top = others.filter(x => similarScore(x, base) > 0).slice(0, 10);
+      if (!top.length) { elRelated.style.display = 'none'; return; }
+      elRelated.style.display = '';
+      elRelItems.innerHTML = top.map(it => `<span class="rel-item" data-file="${it.path}">${it.title || it.name}</span>`).join('');
+      elRelItems.querySelectorAll('.rel-item').forEach(n => n.addEventListener('click', () => selectFile(n.getAttribute('data-file'))));
+    }
+
+    function renderTagChips() {
+      const entries = Array.from(state.tagCounts.entries()).sort((a,b)=> b[1]-a[1]).slice(0, 60);
+      elTagChips.innerHTML = entries.map(([t,c]) => `<span class="chip ${state.activeTags.has(t)?'active':''}" data-tag="${t}">${t}<span>${c}</span></span>`).join('');
+      elTagChips.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
+        const t = ch.getAttribute('data-tag');
+        if (state.activeTags.has(t)) state.activeTags.delete(t); else state.activeTags.add(t);
+        renderAll();
+      }));
+    }
+
+    function renderAll() {
+      renderTagChips();
       renderTree();
       renderCards();
     }
@@ -192,9 +295,11 @@
       const item = state.items.find(x => x.path === path);
       if (!item) return;
       state.selected = item;
-      const url = `./pdf-viewer/index.html?file=${encodeURIComponent(item.url)}`;
+      const lastPage = progress[path] || 1;
+      const url = `./pdf-viewer/index.html?file=${encodeURIComponent(item.url)}&page=${lastPage}`;
       elViewer.setAttribute('src', url);
       location.hash = encodeURIComponent(item.path);
+      renderRelated(item);
     }
 
     function restoreFromHash() {
@@ -204,18 +309,24 @@
 
     window.addEventListener('hashchange', restoreFromHash);
 
-    document.getElementById('expandAll').addEventListener('click', () => {
-      elTree.querySelectorAll('details').forEach(d => d.open = true);
-    });
-    document.getElementById('collapseAll').addEventListener('click', () => {
-      elTree.querySelectorAll('details').forEach(d => d.open = false);
+    document.getElementById('expandAll').addEventListener('click', () => { elTree.querySelectorAll('details').forEach(d => d.open = true); });
+    document.getElementById('collapseAll').addEventListener('click', () => { elTree.querySelectorAll('details').forEach(d => d.open = false); });
+
+    document.getElementById('toggleFav').addEventListener('click', () => { state.onlyFav = !state.onlyFav; renderCards(); });
+
+    elSearch.addEventListener('input', () => { renderCards(); });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/') { e.preventDefault(); elSearch.focus(); return; }
+      if (e.key === 'Escape') { elSearch.value=''; renderCards(); return; }
     });
 
-    elSearch.addEventListener('input', () => {
-      const q = elSearch.value.trim().toLowerCase();
-      if (!q) { state.filtered = []; renderCards(); return; }
-      state.filtered = state.items.filter(it => (it.name + ' ' + (it.displayPath||it.path)).toLowerCase().includes(q));
-      renderCards();
+    // Receive progress updates from viewer
+    window.addEventListener('message', (ev) => {
+      const msg = ev.data || {};
+      if (msg && msg.type === 'progress' && msg.path && msg.page) {
+        progress[msg.path] = msg.page;
+        saveProgress(progress);
+      }
     });
   </script>
 </body>

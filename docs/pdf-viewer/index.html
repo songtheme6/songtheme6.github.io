@@ -14,53 +14,86 @@
     .sp { flex: 1; color: var(--muted); font-size: 12px; }
     #viewerContainer { height: calc(100% - 50px); overflow: auto; }
     canvas { display: block; margin: 8px auto; background: #000; box-shadow: 0 0 0 1px #000; }
+    .bookmarks { position: fixed; right: 10px; top: 56px; background: rgba(0,0,0,.4); border: 1px solid var(--border); border-radius: 10px; padding: 8px; max-height: 50vh; overflow: auto; }
+    .bm { display:flex; align-items:center; gap:6px; margin:4px 0; }
+    .bm button { padding:2px 6px; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha512-5b2l1H1w0N1FM7m/bY7rXfevAefS50p3W2pHNVwq8VY8k7r2M8kLkq6m8dP6W8G1WJmX5m2iQnTQe0a9m4tF1g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script>
-    // Worker
     if (window['pdfjsLib']) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
     }
   </script>
 </head>
 <body>
   <header>
-    <button class="btn" id="prev">上一页</button>
-    <button class="btn" id="next">下一页</button>
+    <button class="btn" id="prev">上一页 ←</button>
+    <button class="btn" id="next">下一页 →</button>
     <span class="sp" id="pageInfo">- / -</span>
-    <button class="btn" id="zoomOut">缩小</button>
-    <button class="btn" id="zoomIn">放大</button>
+    <button class="btn" id="zoomOut">缩小 −</button>
+    <button class="btn" id="zoomIn">放大 ＋</button>
+    <button class="btn" id="addBm">加入书签 ★</button>
   </header>
   <div id="viewerContainer"></div>
+  <div class="bookmarks" id="bmList" style="display:none"></div>
 
   <script>
     const params = new URLSearchParams(location.search);
     const file = params.get('file');
+    const startPageParam = parseInt(params.get('page') || '1', 10) || 1;
+    const pathFromUrl = (file||'').replace('./pdfs/', ''); // same as meta.path
+
     const container = document.getElementById('viewerContainer');
     const pageInfo = document.getElementById('pageInfo');
     const prevBtn = document.getElementById('prev');
     const nextBtn = document.getElementById('next');
     const zoomOutBtn = document.getElementById('zoomOut');
     const zoomInBtn = document.getElementById('zoomIn');
+    const addBmBtn = document.getElementById('addBm');
+    const bmList = document.getElementById('bmList');
+
+    const LS_PROGRESS = 'pdf:progress';
+    const LS_BM = 'pdf:bookmarks'; // { [path]: [page,...] }
+
+    function loadJSON(key, def){ try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(def)); } catch { return def; } }
+    function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
     let pdfDoc = null;
-    let currentPage = 1;
+    let currentPage = Math.max(1, startPageParam);
     let scale = 1.15;
     let rendering = false;
     let pendingPage = null;
+    let progress = loadJSON(LS_PROGRESS, {});
+    let bookmarks = loadJSON(LS_BM, {});
+
+    function postProgress() {
+      try { parent.postMessage({ type: 'progress', path: pathFromUrl, page: currentPage }, '*'); } catch {}
+    }
+
+    function saveProgressLocal() {
+      progress[pathFromUrl] = currentPage;
+      saveJSON(LS_PROGRESS, progress);
+    }
 
     async function load() {
       if (!file) {
         container.innerHTML = '<p style="padding:12px;color:#9aa3c7">未选择文件。</p>';
         return;
       }
+      if (!window['pdfjsLib']) {
+        container.innerHTML = '<p style="padding:12px;color:#ff8080">加载失败：PDF.js 未正确加载。</p>';
+        return;
+      }
       try {
         const doc = await pdfjsLib.getDocument({ url: file, withCredentials: false }).promise;
         pdfDoc = doc;
-        currentPage = 1;
+        // prefer saved local progress when larger than start param
+        const saved = progress[pathFromUrl] || 1;
+        if (saved > currentPage) currentPage = saved;
         renderPage(currentPage);
+        renderBookmarks();
       } catch (e) {
-        container.innerHTML = `<p style="padding:12px;color:#ff8080">加载失败：${e.message}</p>`;
+        container.innerHTML = `<p style=\"padding:12px;color:#ff8080\">加载失败：${e.message}</p>`;
       }
     }
 
@@ -78,33 +111,49 @@
         page.render(renderContext).promise.then(() => {
           rendering = false;
           pageInfo.textContent = `${num} / ${pdfDoc.numPages}`;
-          if (pendingPage !== null) {
-            renderPage(pendingPage);
-            pendingPage = null;
-          }
+          saveProgressLocal();
+          postProgress();
+          if (pendingPage !== null) { const p = pendingPage; pendingPage = null; renderPage(p); }
         });
       });
     }
 
-    function queueRenderPage(num) {
-      if (rendering) {
-        pendingPage = num; return;
-      }
-      renderPage(num);
-    }
+    function queueRenderPage(num) { if (rendering) { pendingPage = num; return; } renderPage(num); }
 
-    prevBtn.addEventListener('click', () => {
-      if (!pdfDoc) return;
-      if (currentPage <= 1) return;
-      currentPage--; queueRenderPage(currentPage);
-    });
-    nextBtn.addEventListener('click', () => {
-      if (!pdfDoc) return;
-      if (currentPage >= pdfDoc.numPages) return;
-      currentPage++; queueRenderPage(currentPage);
-    });
+    prevBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage <= 1) return; currentPage--; queueRenderPage(currentPage); });
+    nextBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage >= pdfDoc.numPages) return; currentPage++; queueRenderPage(currentPage); });
     zoomOutBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.max(0.25, scale - 0.1); queueRenderPage(currentPage); });
     zoomInBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.min(5, scale + 0.1); queueRenderPage(currentPage); });
+
+    // Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (!pdfDoc) return;
+      if (e.key === 'ArrowLeft' || e.key === 'h') { e.preventDefault(); if (currentPage > 1) { currentPage--; queueRenderPage(currentPage); } }
+      if (e.key === 'ArrowRight' || e.key === 'l') { e.preventDefault(); if (currentPage < pdfDoc.numPages) { currentPage++; queueRenderPage(currentPage); } }
+      if (e.key === '-') { e.preventDefault(); scale = Math.max(0.25, scale - 0.1); queueRenderPage(currentPage); }
+      if (e.key === '=') { e.preventDefault(); scale = Math.min(5, scale + 0.1); queueRenderPage(currentPage); }
+      if (e.key === 'b') { e.preventDefault(); addBookmark(); }
+      if (e.key === 'g') { e.preventDefault(); gotoPrompt(); }
+    });
+
+    function getBms() { return Array.isArray(bookmarks[pathFromUrl]) ? bookmarks[pathFromUrl] : []; }
+    function setBms(arr) { bookmarks[pathFromUrl] = Array.from(new Set(arr)).sort((a,b)=>a-b); saveJSON(LS_BM, bookmarks); renderBookmarks(); }
+
+    function addBookmark() { const arr = getBms(); arr.push(currentPage); setBms(arr); }
+    function delBookmark(p) { const arr = getBms().filter(x=>x!==p); setBms(arr); }
+
+    function renderBookmarks() {
+      const arr = getBms();
+      if (!arr.length) { bmList.style.display = 'none'; bmList.innerHTML = ''; return; }
+      bmList.style.display = '';
+      bmList.innerHTML = arr.map(p => `<div class=\"bm\"><button data-go=\"${p}\">第 ${p} 页</button><button data-del=\"${p}\">删除</button></div>`).join('');
+      bmList.querySelectorAll('button[data-go]').forEach(b => b.addEventListener('click', () => { currentPage = parseInt(b.getAttribute('data-go'),10); queueRenderPage(currentPage); }));
+      bmList.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => { delBookmark(parseInt(b.getAttribute('data-del'),10)); }));
+    }
+
+    function gotoPrompt() { const s = prompt('跳转到页码：'); const n = parseInt(s||'', 10); if (n>0 && n<= (pdfDoc?pdfDoc.numPages:1)) { currentPage = n; queueRenderPage(currentPage); } }
+
+    addBmBtn.addEventListener('click', addBookmark);
 
     load();
   </script>
