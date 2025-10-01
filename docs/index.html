@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF 图书馆</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #0e1530;
+      --text: #e6e9f5;
+      --muted: #9aa3c7;
+      --primary: #6aa3ff;
+      --accent: #7bd389;
+      --border: #223058;
+      --card: #162246;
+      --hover: #1c2b59;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 14px/1.4 ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #0f1733, #0b1020);
+      position: sticky; top: 0; z-index: 10;
+    }
+    header h1 { font-size: 16px; margin: 0; letter-spacing: .5px; }
+    header .search {
+      flex: 1; display: flex; gap: 8px; align-items: center;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+    }
+    header input[type="search"] {
+      flex: 1; background: transparent; border: none; outline: none; color: var(--text);
+      font-size: 14px;
+    }
+    .layout {
+      display: grid; grid-template-columns: 320px 1fr; height: calc(100% - 58px);
+    }
+    aside {
+      border-right: 1px solid var(--border); background: var(--panel-2); overflow: auto;
+    }
+    main { display: grid; grid-template-rows: auto 1fr; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 12px; overflow: auto; background: var(--panel-2); border-bottom: 1px solid var(--border); }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      display: flex; flex-direction: column; cursor: pointer; transition: .15s ease;
+    }
+    .card:hover { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(106,163,255,.2) inset; }
+    .thumb { aspect-ratio: 3/4; background: #0a0f22; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; background: #000; }
+    .meta { padding: 8px; display: grid; gap: 6px; }
+    .name { font-size: 13px; line-height: 1.35; word-break: break-word; }
+    .path { color: var(--muted); font-size: 12px; }
+    .tree { padding: 8px 10px; }
+    .tree details { border-radius: 8px; }
+    .tree summary { cursor: pointer; padding: 6px 8px; border-radius: 8px; }
+    .tree summary:hover { background: var(--hover); }
+    .tree a { color: var(--text); text-decoration: none; display: block; padding: 6px 8px; border-radius: 8px; }
+    .tree a:hover { background: var(--hover); }
+    .viewer { border-top: 1px solid var(--border); }
+    iframe { width: 100%; height: 100%; border: 0; background: #0b0f20; }
+    .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel);
+      position: sticky; top: 0; z-index: 5; }
+    .toolbar .count { color: var(--muted); }
+    .btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .btn:hover { border-color: var(--primary); }
+    .hint { color: var(--muted); margin-left: auto; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📚 PDF 图书馆</h1>
+    <div class="search">
+      <input id="search" type="search" placeholder="搜索文件名或路径…" />
+      <span class="count" id="count"></span>
+    </div>
+    <button class="btn" id="expandAll">全部展开</button>
+    <button class="btn" id="collapseAll">全部折叠</button>
+  </header>
+  <div class="layout">
+    <aside>
+      <div class="tree" id="tree"></div>
+    </aside>
+    <main>
+      <div class="cards" id="cards"></div>
+      <div class="viewer"><iframe id="viewer" src="./pdf-viewer/index.html"></iframe></div>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      items: [], // flat list
+      filtered: [],
+      treeRoot: {},
+      selected: null,
+    };
+
+    const elTree = document.getElementById('tree');
+    const elCards = document.getElementById('cards');
+    const elViewer = document.getElementById('viewer');
+    const elSearch = document.getElementById('search');
+    const elCount = document.getElementById('count');
+
+    fetch('./meta.json?_=' + Date.now()).then(r => r.json()).then(meta => {
+      state.items = Array.isArray(meta.items) ? meta.items : [];
+      buildTree();
+      render();
+      restoreFromHash();
+    }).catch(() => {
+      state.items = [];
+      buildTree();
+      render();
+    });
+
+    function pathSegments(p) {
+      return p.split('/').filter(Boolean);
+    }
+
+    function buildTree() {
+      const root = { name: '', children: new Map(), files: [] };
+      for (const it of state.items) {
+        const segs = pathSegments(it.path);
+        let cur = root;
+        for (let i = 0; i < segs.length - 1; i++) {
+          const name = segs[i];
+          if (!cur.children.has(name)) cur.children.set(name, { name, children: new Map(), files: [] });
+          cur = cur.children.get(name);
+        }
+        cur.files.push(it);
+      }
+      state.treeRoot = root;
+    }
+
+    function detailsNode(node, prefix = '') {
+      const entries = Array.from(node.children.keys()).sort();
+      const files = node.files.slice().sort((a,b)=>a.name.localeCompare(b.name));
+      let html = '';
+      for (const dir of entries) {
+        const child = node.children.get(dir);
+        html += `<details open data-dir="${prefix + dir}"><summary>📁 ${dir}</summary>`;
+        html += `<div class="group">${detailsNode(child, prefix + dir + '/')}</div>`;
+        html += `</details>`;
+      }
+      for (const f of files) {
+        html += `<a href="#${encodeURIComponent(f.path)}" data-file="${f.path}">📄 ${f.name}</a>`;
+      }
+      return html;
+    }
+
+    function renderTree() {
+      elTree.innerHTML = detailsNode(state.treeRoot);
+      elTree.querySelectorAll('a[data-file]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const p = a.getAttribute('data-file');
+          selectFile(p);
+        });
+      });
+    }
+
+    function renderCards() {
+      const list = state.filtered.length ? state.filtered : state.items;
+      elCount.textContent = `${list.length} 个文件`;
+      elCards.innerHTML = list.map(it => {
+        const cov = it.cover ? it.cover : '';
+        const covHtml = cov ? `<img loading="lazy" src="${cov}" alt="${it.name}"/>` : `<span>无封面</span>`;
+        return `
+          <div class="card" data-file="${it.path}">
+            <div class="thumb">${covHtml}</div>
+            <div class="meta">
+              <div class="name">${it.name}</div>
+              <div class="path">${it.displayPath || it.path}</div>
+            </div>
+          </div>`;
+      }).join('');
+      elCards.querySelectorAll('.card').forEach(c => {
+        c.addEventListener('click', () => selectFile(c.getAttribute('data-file')));
+      });
+    }
+
+    function render() {
+      renderTree();
+      renderCards();
+    }
+
+    function selectFile(path) {
+      const item = state.items.find(x => x.path === path);
+      if (!item) return;
+      state.selected = item;
+      const url = `./pdf-viewer/index.html?file=${encodeURIComponent(item.url)}`;
+      elViewer.setAttribute('src', url);
+      location.hash = encodeURIComponent(item.path);
+    }
+
+    function restoreFromHash() {
+      const h = location.hash.startsWith('#') ? decodeURIComponent(location.hash.slice(1)) : '';
+      if (h) selectFile(h);
+    }
+
+    window.addEventListener('hashchange', restoreFromHash);
+
+    document.getElementById('expandAll').addEventListener('click', () => {
+      elTree.querySelectorAll('details').forEach(d => d.open = true);
+    });
+    document.getElementById('collapseAll').addEventListener('click', () => {
+      elTree.querySelectorAll('details').forEach(d => d.open = false);
+    });
+
+    elSearch.addEventListener('input', () => {
+      const q = elSearch.value.trim().toLowerCase();
+      if (!q) { state.filtered = []; renderCards(); return; }
+      state.filtered = state.items.filter(it => (it.name + ' ' + (it.displayPath||it.path)).toLowerCase().includes(q));
+      renderCards();
+    });
+  </script>
+</body>
+</html>
