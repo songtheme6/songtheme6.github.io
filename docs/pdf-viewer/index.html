@@ -13,7 +13,8 @@
     .btn:hover { border-color: #6aa3ff; }
     .sp { flex: 1; color: var(--muted); font-size: 12px; }
     #viewerContainer { height: calc(100% - 50px); overflow: auto; }
-    canvas { display: block; margin: 8px auto; background: #000; box-shadow: 0 0 0 1px #000; }
+    .page { margin: 8px auto; background: #000; box-shadow: 0 0 0 1px #000; display: grid; place-items: center; }
+    canvas { background: #000; display: block; }
     .bookmarks { position: fixed; right: 10px; top: 56px; background: rgba(0,0,0,.4); border: 1px solid var(--border); border-radius: 10px; padding: 8px; max-height: 50vh; overflow: auto; }
     .bm { display:flex; align-items:center; gap:6px; margin:4px 0; }
     .bm button { padding:2px 6px; }
@@ -33,6 +34,8 @@
     <button class="btn" id="zoomOut">缩小 −</button>
     <button class="btn" id="zoomIn">放大 ＋</button>
     <button class="btn" id="addBm">加入书签 ★</button>
+    <button class="btn" id="openNative">浏览器预览 ↗</button>
+    <button class="btn" id="download">下载 ⤓</button>
   </header>
   <div id="viewerContainer"></div>
   <div class="bookmarks" id="bmList" style="display:none"></div>
@@ -41,7 +44,7 @@
     const params = new URLSearchParams(location.search);
     const file = params.get('file');
     const startPageParam = parseInt(params.get('page') || '1', 10) || 1;
-    const pathFromUrl = (file||'').replace('./pdfs/', ''); // same as meta.path
+    const pathFromUrl = (file||'').replace('/pdfs/', '').replace('./pdfs/', '');
 
     const container = document.getElementById('viewerContainer');
     const pageInfo = document.getElementById('pageInfo');
@@ -51,9 +54,11 @@
     const zoomInBtn = document.getElementById('zoomIn');
     const addBmBtn = document.getElementById('addBm');
     const bmList = document.getElementById('bmList');
+    const openBtn = document.getElementById('openNative');
+    const dlBtn = document.getElementById('download');
 
     const LS_PROGRESS = 'pdf:progress';
-    const LS_BM = 'pdf:bookmarks'; // { [path]: [page,...] }
+    const LS_BM = 'pdf:bookmarks';
 
     function loadJSON(key, def){ try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(def)); } catch { return def; } }
     function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
@@ -61,77 +66,143 @@
     let pdfDoc = null;
     let currentPage = Math.max(1, startPageParam);
     let scale = 1.15;
-    let rendering = false;
-    let pendingPage = null;
     let progress = loadJSON(LS_PROGRESS, {});
     let bookmarks = loadJSON(LS_BM, {});
 
-    function postProgress() {
-      try { parent.postMessage({ type: 'progress', path: pathFromUrl, page: currentPage }, '*'); } catch {}
-    }
+    let io = null; // IntersectionObserver
+    const pageNodes = new Map(); // pageNum -> {wrap, canvas, renderedScale}
 
-    function saveProgressLocal() {
-      progress[pathFromUrl] = currentPage;
-      saveJSON(LS_PROGRESS, progress);
-    }
+    function postProgress() { try { parent.postMessage({ type: 'progress', path: pathFromUrl, page: currentPage }, '*'); } catch {} }
+    function saveProgressLocal() { progress[pathFromUrl] = currentPage; saveJSON(LS_PROGRESS, progress); }
 
     async function load() {
-      if (!file) {
-        container.innerHTML = '<p style="padding:12px;color:#9aa3c7">未选择文件。</p>';
-        return;
-      }
-      if (!window['pdfjsLib']) {
-        container.innerHTML = '<p style="padding:12px;color:#ff8080">加载失败：PDF.js 未正确加载。</p>';
-        return;
-      }
+      if (!file) { container.innerHTML = '<p style="padding:12px;color:#9aa3c7">未选择文件。</p>'; return; }
+      if (!window['pdfjsLib']) { container.innerHTML = '<p style="padding:12px;color:#ff8080">加载失败：PDF.js 未正确加载。</p>'; return; }
       try {
         const doc = await pdfjsLib.getDocument({ url: file, withCredentials: false }).promise;
         pdfDoc = doc;
-        // prefer saved local progress when larger than start param
         const saved = progress[pathFromUrl] || 1;
         if (saved > currentPage) currentPage = saved;
-        renderPage(currentPage);
+        setupPages();
+        setupObserver();
+        scrollToPage(currentPage);
+        updatePageInfo();
         renderBookmarks();
+        openBtn.addEventListener('click', () => window.open(file, '_blank'));
+        dlBtn.addEventListener('click', () => {
+          const a = document.createElement('a'); a.href = file; a.download = decodeURIComponent((file.split('/')||[]).pop()||'document.pdf'); a.click();
+        });
       } catch (e) {
         container.innerHTML = `<p style=\"padding:12px;color:#ff8080\">加载失败：${e.message}</p>`;
       }
     }
 
-    function renderPage(num) {
-      rendering = true;
+    function setupPages(){
+      container.innerHTML = '';
+      pageNodes.clear();
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const wrap = document.createElement('div');
+        wrap.className = 'page';
+        wrap.dataset.pageNumber = String(i);
+        // placeholder size will be set when first render
+        const canvas = document.createElement('canvas');
+        wrap.appendChild(canvas);
+        container.appendChild(wrap);
+        pageNodes.set(i, { wrap, canvas, renderedScale: 0 });
+      }
+    }
+
+    function setupObserver(){
+      if (io) io.disconnect();
+      io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const pn = parseInt(entry.target.dataset.pageNumber, 10);
+            renderPageIfNeeded(pn);
+          }
+        }
+      }, { root: container, rootMargin: '600px 0px', threshold: 0.01 });
+      for (const { wrap } of pageNodes.values()) io.observe(wrap);
+
+      // track current page by scroll midpoint
+      container.addEventListener('scroll', throttle(updateCurrentPageByScroll, 150));
+    }
+
+    function throttle(fn, ms){ let t=0; return function(){ const now=Date.now(); if (now-t>ms){ t=now; fn.apply(this, arguments); } } }
+
+    function updateCurrentPageByScroll(){
+      const mid = container.scrollTop + container.clientHeight/2;
+      let bestPage = 1; let bestDist = Infinity;
+      for (const [num, {wrap}] of pageNodes) {
+        const r = wrap.getBoundingClientRect();
+        const top = r.top + container.scrollTop - container.getBoundingClientRect().top;
+        const center = top + wrap.offsetHeight/2;
+        const d = Math.abs(center - mid);
+        if (d < bestDist) { bestDist = d; bestPage = num; }
+      }
+      if (bestPage !== currentPage) {
+        currentPage = bestPage;
+        updatePageInfo();
+        saveProgressLocal();
+        postProgress();
+      }
+    }
+
+    function updatePageInfo(){ pageInfo.textContent = `${currentPage} / ${pdfDoc.numPages}`; }
+
+    function renderPageIfNeeded(num){
+      const node = pageNodes.get(num);
+      if (!node) return;
+      if (Math.abs(node.renderedScale - scale) < 0.001 && node.canvas.width) return;
       pdfDoc.getPage(num).then(page => {
         const viewport = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
+        const canvas = node.canvas;
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        container.innerHTML = '';
-        container.appendChild(canvas);
-        const renderContext = { canvasContext: ctx, viewport };
-        page.render(renderContext).promise.then(() => {
-          rendering = false;
-          pageInfo.textContent = `${num} / ${pdfDoc.numPages}`;
-          saveProgressLocal();
-          postProgress();
-          if (pendingPage !== null) { const p = pendingPage; pendingPage = null; renderPage(p); }
+        node.wrap.style.width = viewport.width + 'px';
+        node.wrap.style.height = viewport.height + 'px';
+        page.render({ canvasContext: ctx, viewport }).promise.then(() => {
+          node.renderedScale = scale;
+          if (num === currentPage) { saveProgressLocal(); postProgress(); }
         });
       });
     }
 
-    function queueRenderPage(num) { if (rendering) { pendingPage = num; return; } renderPage(num); }
+    function rerenderVisible(){
+      // re-render a few pages around the viewport for zoom changes
+      const pages = Array.from(pageNodes.keys());
+      const mid = container.scrollTop + container.clientHeight/2;
+      const sorted = pages.map(n => {
+        const {wrap} = pageNodes.get(n);
+        const top = wrap.offsetTop;
+        const center = top + wrap.offsetHeight/2;
+        const d = Math.abs(center - mid);
+        return {n, d};
+      }).sort((a,b)=>a.d-b.d).slice(0, 6);
+      for (const {n} of sorted) renderPageIfNeeded(n);
+    }
 
-    prevBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage <= 1) return; currentPage--; queueRenderPage(currentPage); });
-    nextBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage >= pdfDoc.numPages) return; currentPage++; queueRenderPage(currentPage); });
-    zoomOutBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.max(0.25, scale - 0.1); queueRenderPage(currentPage); });
-    zoomInBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.min(5, scale + 0.1); queueRenderPage(currentPage); });
+    function scrollToPage(n){
+      const node = pageNodes.get(n);
+      if (!node) return;
+      // ensure target page rendered quickly
+      renderPageIfNeeded(n);
+      container.scrollTo({ top: node.wrap.offsetTop - 12, behavior: 'instant' in container ? 'instant' : 'auto' });
+    }
+
+    prevBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage <= 1) return; currentPage--; scrollToPage(currentPage); updatePageInfo(); });
+    nextBtn.addEventListener('click', () => { if (!pdfDoc) return; if (currentPage >= pdfDoc.numPages) return; currentPage++; scrollToPage(currentPage); updatePageInfo(); });
+    zoomOutBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.max(0.25, scale - 0.1); rerenderVisible(); updatePageInfo(); });
+    zoomInBtn.addEventListener('click', () => { if (!pdfDoc) return; scale = Math.min(5, scale + 0.1); rerenderVisible(); updatePageInfo(); });
 
     // Shortcuts
     window.addEventListener('keydown', (e) => {
       if (!pdfDoc) return;
-      if (e.key === 'ArrowLeft' || e.key === 'h') { e.preventDefault(); if (currentPage > 1) { currentPage--; queueRenderPage(currentPage); } }
-      if (e.key === 'ArrowRight' || e.key === 'l') { e.preventDefault(); if (currentPage < pdfDoc.numPages) { currentPage++; queueRenderPage(currentPage); } }
-      if (e.key === '-') { e.preventDefault(); scale = Math.max(0.25, scale - 0.1); queueRenderPage(currentPage); }
-      if (e.key === '=') { e.preventDefault(); scale = Math.min(5, scale + 0.1); queueRenderPage(currentPage); }
+      if (e.key === 'ArrowLeft' || e.key === 'h') { e.preventDefault(); if (currentPage > 1) { currentPage--; scrollToPage(currentPage); updatePageInfo(); } }
+      if (e.key === 'ArrowRight' || e.key === 'l') { e.preventDefault(); if (currentPage < pdfDoc.numPages) { currentPage++; scrollToPage(currentPage); updatePageInfo(); } }
+      if (e.key === '-') { e.preventDefault(); scale = Math.max(0.25, scale - 0.1); rerenderVisible(); }
+      if (e.key === '=') { e.preventDefault(); scale = Math.min(5, scale + 0.1); rerenderVisible(); }
       if (e.key === 'b') { e.preventDefault(); addBookmark(); }
       if (e.key === 'g') { e.preventDefault(); gotoPrompt(); }
     });
@@ -147,11 +218,11 @@
       if (!arr.length) { bmList.style.display = 'none'; bmList.innerHTML = ''; return; }
       bmList.style.display = '';
       bmList.innerHTML = arr.map(p => `<div class=\"bm\"><button data-go=\"${p}\">第 ${p} 页</button><button data-del=\"${p}\">删除</button></div>`).join('');
-      bmList.querySelectorAll('button[data-go]').forEach(b => b.addEventListener('click', () => { currentPage = parseInt(b.getAttribute('data-go'),10); queueRenderPage(currentPage); }));
+      bmList.querySelectorAll('button[data-go]').forEach(b => b.addEventListener('click', () => { currentPage = parseInt(b.getAttribute('data-go'),10); scrollToPage(currentPage); updatePageInfo(); }));
       bmList.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => { delBookmark(parseInt(b.getAttribute('data-del'),10)); }));
     }
 
-    function gotoPrompt() { const s = prompt('跳转到页码：'); const n = parseInt(s||'', 10); if (n>0 && n<= (pdfDoc?pdfDoc.numPages:1)) { currentPage = n; queueRenderPage(currentPage); } }
+    function gotoPrompt() { const s = prompt('跳转到页码：'); const n = parseInt(s||'', 10); if (n>0 && n<= (pdfDoc?pdfDoc.numPages:1)) { currentPage = n; scrollToPage(currentPage); updatePageInfo(); } }
 
     addBmBtn.addEventListener('click', addBookmark);
 
