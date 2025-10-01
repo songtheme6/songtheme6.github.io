@@ -7,14 +7,14 @@
       "author": null,
       "pages": 102,
       "size": 7996952,
-      "mtime": 1759345208,
+      "mtime": 1759345712,
       "tags": [
         "flink基础教程"
       ],
       "path": "Flink基础教程.pdf",
       "displayPath": ".",
-      "url": "./pdfs/Flink基础教程.pdf",
-      "cover": "./covers/Flink基础教程.jpg"
+      "url": "/pdfs/Flink基础教程.pdf",
+      "cover": "/covers/Flink基础教程.jpg"
     },
     {
       "id": "Python/Effect Python.pdf",
@@ -23,15 +23,15 @@
       "author": "（美）斯拉特金著",
       "pages": 228,
       "size": 37240323,
-      "mtime": 1759345208,
+      "mtime": 1759345712,
       "tags": [
         "effect",
         "python"
       ],
       "path": "Python/Effect Python.pdf",
       "displayPath": "Python",
-      "url": "./pdfs/Python/Effect Python.pdf",
-      "cover": "./covers/Python/Effect Python.jpg"
+      "url": "/pdfs/Python/Effect Python.pdf",
+      "cover": "/covers/Python/Effect Python.jpg"
     }
   ]
 }
