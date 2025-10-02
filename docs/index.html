@@ -43,6 +43,33 @@
     .layout { display: grid; grid-template-columns: 320px 1fr; height: calc(100% - 58px); }
     aside { border-right: 1px solid var(--border); background: var(--panel-2); overflow: auto; }
     main { display: grid; grid-template-rows: auto auto 1fr; }
+    
+    /* 手机适配 */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { display: none; }
+      header { flex-wrap: wrap; gap: 8px; }
+      header .search { order: 2; width: 100%; }
+      .filters { flex-wrap: wrap; gap: 6px; }
+      .filters .hint { display: none; }
+      .cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 8px; }
+      .card .meta { padding: 6px; }
+      .card .name { font-size: 12px; }
+      .card .path { font-size: 11px; }
+      .card .badges { font-size: 11px; }
+      .related { padding: 6px 8px; }
+      .rel-items { gap: 6px; }
+      .rel-item { padding: 4px 6px; font-size: 12px; }
+    }
+    
+    @media (max-width: 480px) {
+      header { padding: 8px 12px; }
+      header h1 { font-size: 14px; }
+      .cards { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; padding: 6px; }
+      .card .thumb { aspect-ratio: 2/3; }
+      .filters { padding: 8px; }
+      .btn { padding: 4px 8px; font-size: 12px; }
+    }
 
     .filters { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); flex-wrap: wrap; }
     .chips { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -70,8 +97,6 @@
     .tree a { color: var(--text); text-decoration: none; display: block; padding: 6px 8px; border-radius: 8px; }
     .tree a:hover { background: var(--hover); }
 
-    .viewer { border-top: 1px solid var(--border); }
-    iframe { width: 100%; height: 100%; border: 0; background: #0b0f20; }
 
     .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--panel); position: sticky; top: 0; z-index: 5; }
     .btn { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
@@ -79,9 +104,32 @@
     .btn[disabled] { opacity: .5; cursor: not-allowed; }
     .hint { color: var(--muted); margin-left: auto; font-size: 12px; }
 
-    .related { padding: 8px 12px; border-bottom: 1px solid var(--border); background: #0f1733; color: var(--muted); font-size: 13px; }
-    .rel-items { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-    .rel-item { background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+    .related { padding: 12px; border-top: 1px solid var(--border); background: #0f1733; color: var(--muted); font-size: 13px; }
+    .rel-items { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .rel-item { background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: .15s ease; }
+    .rel-item:hover { border-color: var(--primary); background: var(--hover); }
+
+    /* 文件管理模态框 */
+    .file-manager { position: fixed; inset: 0; background: var(--overlay); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .file-manager .panel { width: min(800px, 90vw); max-height: 80vh; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-2); display: grid; grid-template-rows: auto 1fr auto; }
+    .file-manager header { padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .file-manager .content { overflow: auto; padding: 16px; }
+    .file-manager .footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+    
+    .file-list { display: grid; gap: 8px; }
+    .file-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+    .file-item .icon { font-size: 16px; }
+    .file-item .name { flex: 1; }
+    .file-item .actions { display: flex; gap: 6px; }
+    .file-item .actions .btn { padding: 4px 8px; font-size: 12px; }
+    
+    .upload-area { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 16px; cursor: pointer; transition: .15s ease; }
+    .upload-area:hover { border-color: var(--primary); background: var(--hover); }
+    .upload-area.dragover { border-color: var(--accent); background: rgba(123, 211, 137, 0.1); }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+    .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
   </style>
 </head>
 <body>
@@ -104,15 +152,57 @@
         <button class="btn" id="toggleFav">仅看收藏</button>
         <button class="btn" id="openNative" disabled>在浏览器打开</button>
         <button class="btn" id="copyLink" disabled>复制链接</button>
+        <button class="btn" id="manageFiles">📁 文件管理</button>
         <span class="hint">回车打开，F 收藏/取消，Esc 清空搜索</span>
       </div>
+      <div class="cards" id="cards"></div>
       <div class="related" id="related" style="display:none">
-        <div>相关书籍</div>
+        <div>📖 相关书籍</div>
         <div class="rel-items" id="relItems"></div>
       </div>
-      <div class="cards" id="cards"></div>
-      <div class="viewer"><iframe id="viewer" src="./pdf-viewer/index.html"></iframe></div>
     </main>
+  </div>
+
+  <!-- 文件管理模态框 -->
+  <div class="file-manager" id="fileManager">
+    <div class="panel">
+      <header>
+        <h3>📁 文件管理</h3>
+        <button class="btn" id="closeFileManager">✕</button>
+      </header>
+      <div class="content">
+        <div class="form-group">
+          <label>GitHub Token (需要 repo 权限)</label>
+          <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+          <div>📁 拖拽文件到此处或点击选择</div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">支持 PDF 文件</div>
+          <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+        </div>
+        
+        <div class="form-group">
+          <label>目标目录</label>
+          <select id="targetDir">
+            <option value="">根目录 (pdfs/)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <button class="btn" id="createDir">📁 创建新目录</button>
+          <input type="text" id="newDirName" placeholder="目录名" style="margin-left: 8px; width: 200px;">
+        </div>
+        
+        <div class="file-list" id="fileList">
+          <!-- 文件列表将在这里动态生成 -->
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn" id="refreshFiles">🔄 刷新</button>
+        <button class="btn" id="saveFileManager">💾 保存</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -128,7 +218,6 @@
 
     const elTree = document.getElementById('tree');
     const elCards = document.getElementById('cards');
-    const elViewer = document.getElementById('viewer');
     const elSearch = document.getElementById('search');
     const elCount = document.getElementById('count');
     const elTagChips = document.getElementById('tagChips');
@@ -136,6 +225,7 @@
     const elRelItems = document.getElementById('relItems');
     const btnOpenNative = document.getElementById('openNative');
     const btnCopyLink = document.getElementById('copyLink');
+    const btnManageFiles = document.getElementById('manageFiles');
 
     const LS_FAV = 'pdf:favorites';
     const LS_PROGRESS = 'pdf:progress';
@@ -269,7 +359,7 @@
     function renderRelated(base) {
       const others = state.items.filter(x => x.path !== base.path);
       others.sort((x,y) => similarScore(y, base) - similarScore(x, base));
-      const top = others.filter(x => similarScore(x, base) > 0).slice(0, 10);
+      const top = others.filter(x => similarScore(x, base) > 0).slice(0, 12);
       if (!top.length) { elRelated.style.display = 'none'; return; }
       elRelated.style.display = '';
       elRelItems.innerHTML = top.map(it => `<span class=\"rel-item\" data-file=\"${it.path}\">${it.title || it.name}</span>`).join('');
@@ -288,9 +378,7 @@
       const item = state.items.find(x => x.path === path);
       if (!item) return;
       state.selected = item;
-      const lastPage = (loadProgress()[path] || 1);
-      const url = `./pdf-viewer/index.html?file=${encodeURIComponent(item.url)}&page=${lastPage}`;
-      elViewer.setAttribute('src', url);
+      window.open(item.url, '_blank');
       location.hash = encodeURIComponent(item.path);
       renderRelated(item);
       updateOpenButtons();
@@ -311,10 +399,274 @@
     elSearch.addEventListener('input', () => { renderCards(); });
     window.addEventListener('keydown', (e) => { if (e.key === '/') { e.preventDefault(); elSearch.focus(); return; } if (e.key === 'Escape') { elSearch.value=''; renderCards(); return; } });
 
-    window.addEventListener('message', (ev) => { const msg = ev.data || {}; if (msg && msg.type === 'progress' && msg.path && msg.page) { const prog = loadProgress(); prog[msg.path] = msg.page; localStorage.setItem('pdf:progress', JSON.stringify(prog)); }});
 
     btnOpenNative.addEventListener('click', () => { if (!state.selected) return; window.open(state.selected.url, '_blank'); });
     btnCopyLink.addEventListener('click', async () => { if (!state.selected) return; const link = fullUrl(state.selected.url); try { await navigator.clipboard.writeText(link); btnCopyLink.textContent = '已复制'; setTimeout(()=>btnCopyLink.textContent='复制链接', 1000); } catch { prompt('复制失败，手动复制：', link); } });
+
+    // 文件管理功能
+    const fileManager = document.getElementById('fileManager');
+    const githubToken = document.getElementById('githubToken');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const targetDir = document.getElementById('targetDir');
+    const newDirName = document.getElementById('newDirName');
+    const fileList = document.getElementById('fileList');
+    const createDirBtn = document.getElementById('createDir');
+    const refreshFilesBtn = document.getElementById('refreshFiles');
+    const saveFileManagerBtn = document.getElementById('saveFileManager');
+    const closeFileManagerBtn = document.getElementById('closeFileManager');
+
+    // GitHub API 配置
+    const GITHUB_OWNER = 'songtheme6';
+    const GITHUB_REPO = 'songtheme6.github.io';
+    const GITHUB_API_BASE = 'https://api.github.com';
+
+    // 从 localStorage 加载 token
+    const savedToken = localStorage.getItem('github_token');
+    if (savedToken) {
+      githubToken.value = savedToken;
+    }
+
+    // 保存 token 到 localStorage
+    githubToken.addEventListener('input', () => {
+      localStorage.setItem('github_token', githubToken.value);
+    });
+
+    // 打开文件管理器
+    btnManageFiles.addEventListener('click', () => {
+      fileManager.style.display = 'flex';
+      loadDirectories();
+      loadFiles();
+    });
+
+    // 关闭文件管理器
+    closeFileManagerBtn.addEventListener('click', () => {
+      fileManager.style.display = 'none';
+    });
+
+    // 点击外部关闭
+    fileManager.addEventListener('click', (e) => {
+      if (e.target === fileManager) {
+        fileManager.style.display = 'none';
+      }
+    });
+
+    // 文件上传区域
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+      uploadFiles(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      uploadFiles(files);
+    });
+
+    // 创建目录
+    createDirBtn.addEventListener('click', async () => {
+      const dirName = newDirName.value.trim();
+      if (!dirName) {
+        alert('请输入目录名');
+        return;
+      }
+      await createDirectory(dirName);
+      newDirName.value = '';
+      loadDirectories();
+    });
+
+    // 刷新文件列表
+    refreshFilesBtn.addEventListener('click', () => {
+      loadFiles();
+    });
+
+    // 保存并触发 Actions
+    saveFileManagerBtn.addEventListener('click', async () => {
+      await triggerActions();
+      alert('已触发 GitHub Actions，请等待几分钟后刷新页面查看更新');
+    });
+
+    // GitHub API 函数
+    async function githubRequest(endpoint, options = {}) {
+      const token = githubToken.value;
+      if (!token) {
+        throw new Error('请先输入 GitHub Token');
+      }
+
+      const response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`GitHub API 错误: ${response.status} - ${error}`);
+      }
+
+      return response.json();
+    }
+
+    // 加载目录列表
+    async function loadDirectories() {
+      try {
+        const contents = await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/pdfs`);
+        const dirs = contents.filter(item => item.type === 'dir');
+        
+        targetDir.innerHTML = '<option value="">根目录 (pdfs/)</option>';
+        dirs.forEach(dir => {
+          const option = document.createElement('option');
+          option.value = dir.name;
+          option.textContent = `${dir.name}/`;
+          targetDir.appendChild(option);
+        });
+      } catch (error) {
+        console.error('加载目录失败:', error);
+        alert('加载目录失败: ' + error.message);
+      }
+    }
+
+    // 加载文件列表
+    async function loadFiles() {
+      try {
+        const contents = await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/pdfs`);
+        const files = contents.filter(item => item.type === 'file' && item.name.endsWith('.pdf'));
+        
+        fileList.innerHTML = files.map(file => `
+          <div class="file-item">
+            <span class="icon">📄</span>
+            <span class="name">${file.name}</span>
+            <span class="size">${(file.size / 1024).toFixed(1)} KB</span>
+            <div class="actions">
+              <button class="btn" onclick="deleteFile('${file.name}', '${file.sha}')">🗑️ 删除</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('加载文件失败:', error);
+        alert('加载文件失败: ' + error.message);
+      }
+    }
+
+    // 上传文件
+    async function uploadFiles(files) {
+      const token = githubToken.value;
+      if (!token) {
+        alert('请先输入 GitHub Token');
+        return;
+      }
+
+      const targetDirName = targetDir.value;
+      const basePath = targetDirName ? `pdfs/${targetDirName}/` : 'pdfs/';
+
+      for (const file of files) {
+        try {
+          const content = await fileToBase64(file);
+          const path = `${basePath}${file.name}`;
+          
+          await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              message: `Add ${file.name}`,
+              content: content
+            })
+          });
+          
+          console.log(`上传成功: ${file.name}`);
+        } catch (error) {
+          console.error(`上传失败 ${file.name}:`, error);
+          alert(`上传失败 ${file.name}: ${error.message}`);
+        }
+      }
+      
+      loadFiles();
+    }
+
+    // 删除文件
+    window.deleteFile = async function(fileName, sha) {
+      if (!confirm(`确定要删除 ${fileName} 吗？`)) return;
+      
+      try {
+        await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/pdfs/${fileName}`, {
+          method: 'DELETE',
+          body: JSON.stringify({
+            message: `Delete ${fileName}`,
+            sha: sha
+          })
+        });
+        
+        loadFiles();
+        alert('删除成功');
+      } catch (error) {
+        console.error('删除失败:', error);
+        alert('删除失败: ' + error.message);
+      }
+    };
+
+    // 创建目录
+    async function createDirectory(dirName) {
+      const path = `pdfs/${dirName}/.gitkeep`;
+      const content = btoa(''); // 空文件
+      
+      try {
+        await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            message: `Create directory ${dirName}`,
+            content: content
+          })
+        });
+        
+        alert('目录创建成功');
+      } catch (error) {
+        console.error('创建目录失败:', error);
+        alert('创建目录失败: ' + error.message);
+      }
+    }
+
+    // 触发 GitHub Actions
+    async function triggerActions() {
+      try {
+        // 创建一个空提交来触发 Actions
+        const content = btoa(`# Trigger Actions\n${new Date().toISOString()}`);
+        await githubRequest(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/.trigger`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            message: 'Trigger Actions',
+            content: content
+          })
+        });
+      } catch (error) {
+        console.error('触发 Actions 失败:', error);
+        alert('触发 Actions 失败: ' + error.message);
+      }
+    }
+
+    // 文件转 Base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
   </script>
 </body>
 </html>
