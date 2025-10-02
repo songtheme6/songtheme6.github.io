@@ -1,37 +1,588 @@
 {
   "items": [
     {
+      "id": "202106 A Tutorial of Transformers-邱锡鹏.pdf",
+      "name": "202106 A Tutorial of Transformers-邱锡鹏.pdf",
+      "title": "202106 A Tutorial of Transformers-邱锡鹏",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "202106",
+        "tutorial",
+        "transformers",
+        "邱锡鹏"
+      ],
+      "path": "202106 A Tutorial of Transformers-邱锡鹏.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/202106 A Tutorial of Transformers-邱锡鹏.pdf",
+      "cover": null
+    },
+    {
+      "id": "bert基础教程.pdf",
+      "name": "bert基础教程.pdf",
+      "title": "bert基础教程",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "bert基础教程"
+      ],
+      "path": "bert基础教程.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/bert基础教程.pdf",
+      "cover": null
+    },
+    {
+      "id": "Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+      "name": "Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+      "title": "Bishop-Pattern-Recognition-and-Machine-Learning-2006",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "bishop",
+        "pattern",
+        "recognition",
+        "machine",
+        "learning",
+        "2006"
+      ],
+      "path": "Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+      "cover": null
+    },
+    {
+      "id": "d2l-zh-pytorch.pdf",
+      "name": "d2l-zh-pytorch.pdf",
+      "title": "d2l-zh-pytorch",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "d2l",
+        "zh",
+        "pytorch"
+      ],
+      "path": "d2l-zh-pytorch.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/d2l-zh-pytorch.pdf",
+      "cover": null
+    },
+    {
+      "id": "Effect Python.pdf",
+      "name": "Effect Python.pdf",
+      "title": "Effect Python",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "effect",
+        "python"
+      ],
+      "path": "Effect Python.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/Effect Python.pdf",
+      "cover": null
+    },
+    {
       "id": "Flink基础教程.pdf",
       "name": "Flink基础教程.pdf",
-      "title": "Flink基础教程.pdf",
+      "title": "Flink基础教程",
       "author": null,
-      "pages": 102,
-      "size": 7996952,
-      "mtime": 1759390334,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
       "tags": [
         "flink基础教程"
       ],
       "path": "Flink基础教程.pdf",
       "displayPath": ".",
       "url": "/pdfs/Flink基础教程.pdf",
-      "cover": "/covers/Flink基础教程.jpg"
+      "cover": null
     },
     {
-      "id": "Python/Effect Python.pdf",
-      "name": "Effect Python.pdf",
-      "title": "Effective Python  编写高质量Python代码的59个有效方法",
-      "author": "（美）斯拉特金著",
-      "pages": 228,
-      "size": 37240323,
-      "mtime": 1759390334,
+      "id": "LLMBook.pdf",
+      "name": "LLMBook.pdf",
+      "title": "LLMBook",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
       "tags": [
-        "effect",
-        "python"
+        "llmbook"
       ],
-      "path": "Python/Effect Python.pdf",
-      "displayPath": "Python",
-      "url": "/pdfs/Python/Effect Python.pdf",
-      "cover": "/covers/Python/Effect Python.jpg"
+      "path": "LLMBook.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/LLMBook.pdf",
+      "cover": null
+    },
+    {
+      "id": "MLaPP.pdf",
+      "name": "MLaPP.pdf",
+      "title": "MLaPP",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "mlapp"
+      ],
+      "path": "MLaPP.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/MLaPP.pdf",
+      "cover": null
+    },
+    {
+      "id": "mt-book.pdf",
+      "name": "mt-book.pdf",
+      "title": "mt-book",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "mt"
+      ],
+      "path": "mt-book.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/mt-book.pdf",
+      "cover": null
+    },
+    {
+      "id": "nndl-book.pdf",
+      "name": "nndl-book.pdf",
+      "title": "nndl-book",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "nndl"
+      ],
+      "path": "nndl-book.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/nndl-book.pdf",
+      "cover": null
+    },
+    {
+      "id": "PRML中文版_模式识别与机器学习.pdf",
+      "name": "PRML中文版_模式识别与机器学习.pdf",
+      "title": "PRML中文版_模式识别与机器学习",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "prml中文版",
+        "模式识别与机器学习"
+      ],
+      "path": "PRML中文版_模式识别与机器学习.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/PRML中文版_模式识别与机器学习.pdf",
+      "cover": null
+    },
+    {
+      "id": "Probabilistic Machine Learning An Introduction Kevin P. Murphy.pdf",
+      "name": "Probabilistic Machine Learning An Introduction Kevin P. Murphy.pdf",
+      "title": "Probabilistic Machine Learning An Introduction Kevin P. Murphy",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "probabilistic",
+        "machine",
+        "learning",
+        "introduction",
+        "kevin",
+        "murphy"
+      ],
+      "path": "Probabilistic Machine Learning An Introduction Kevin P. Murphy.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/Probabilistic Machine Learning An Introduction Kevin P. Murphy.pdf",
+      "cover": null
+    },
+    {
+      "id": "SQL基础教程.pdf",
+      "name": "SQL基础教程.pdf",
+      "title": "SQL基础教程",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "sql基础教程"
+      ],
+      "path": "SQL基础教程.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/SQL基础教程.pdf",
+      "cover": null
+    },
+    {
+      "id": "SQL进阶教程.pdf",
+      "name": "SQL进阶教程.pdf",
+      "title": "SQL进阶教程",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "sql进阶教程"
+      ],
+      "path": "SQL进阶教程.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/SQL进阶教程.pdf",
+      "cover": null
+    },
+    {
+      "id": "《Go语言实战》.pdf",
+      "name": "《Go语言实战》.pdf",
+      "title": "《Go语言实战》",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "《go语言实战》"
+      ],
+      "path": "《Go语言实战》.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/《Go语言实战》.pdf",
+      "cover": null
+    },
+    {
+      "id": "代数编码与密码 by 许以超 马松雅 (z-lib.org).pdf",
+      "name": "代数编码与密码 by 许以超 马松雅 (z-lib.org).pdf",
+      "title": "代数编码与密码 by 许以超 马松雅 (z-lib.org)",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "代数编码与密码",
+        "许以超",
+        "马松雅",
+        "lib",
+        "org"
+      ],
+      "path": "代数编码与密码 by 许以超 马松雅 (z-lib.org).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/代数编码与密码 by 许以超 马松雅 (z-lib.org).pdf",
+      "cover": null
+    },
+    {
+      "id": "刘海洋 - LaTeX入门-电子工业出版社 (2013).pdf",
+      "name": "刘海洋 - LaTeX入门-电子工业出版社 (2013).pdf",
+      "title": "刘海洋 - LaTeX入门-电子工业出版社 (2013)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "刘海洋",
+        "latex入门",
+        "电子工业出版社",
+        "2013"
+      ],
+      "path": "刘海洋 - LaTeX入门-电子工业出版社 (2013).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/刘海洋 - LaTeX入门-电子工业出版社 (2013).pdf",
+      "cover": null
+    },
+    {
+      "id": "动手学强化学习 (张伟楠，沈键，俞勇).pdf",
+      "name": "动手学强化学习 (张伟楠，沈键，俞勇).pdf",
+      "title": "动手学强化学习 (张伟楠，沈键，俞勇)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "动手学强化学习",
+        "张伟楠，沈键，俞勇"
+      ],
+      "path": "动手学强化学习 (张伟楠，沈键，俞勇).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/动手学强化学习 (张伟楠，沈键，俞勇).pdf",
+      "cover": null
+    },
+    {
+      "id": "周志华-机器学习.pdf",
+      "name": "周志华-机器学习.pdf",
+      "title": "周志华-机器学习",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "周志华",
+        "机器学习"
+      ],
+      "path": "周志华-机器学习.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/周志华-机器学习.pdf",
+      "cover": null
+    },
+    {
+      "id": "基础分析讲义.pdf",
+      "name": "基础分析讲义.pdf",
+      "title": "基础分析讲义",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "基础分析讲义"
+      ],
+      "path": "基础分析讲义.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/基础分析讲义.pdf",
+      "cover": null
+    },
+    {
+      "id": "大规模语言模型：从理论到实践 (张奇,桂韬,郑锐,⻩萱菁).pdf",
+      "name": "大规模语言模型：从理论到实践 (张奇,桂韬,郑锐,⻩萱菁).pdf",
+      "title": "大规模语言模型：从理论到实践 (张奇,桂韬,郑锐,⻩萱菁)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "大规模语言模型：从理论到实践",
+        "张奇,桂韬,郑锐,⻩萱菁"
+      ],
+      "path": "大规模语言模型：从理论到实践 (张奇,桂韬,郑锐,⻩萱菁).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/大规模语言模型：从理论到实践 (张奇,桂韬,郑锐,⻩萱菁).pdf",
+      "cover": null
+    },
+    {
+      "id": "实战大数据(Hadoop+Spark+Flink)——从平台构建到交互式数据分析(离线 实时) (杨俊).pdf",
+      "name": "实战大数据(Hadoop+Spark+Flink)——从平台构建到交互式数据分析(离线 实时) (杨俊).pdf",
+      "title": "实战大数据(Hadoop+Spark+Flink)——从平台构建到交互式数据分析(离线 实时) (杨俊)",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "实战大数据",
+        "hadoop+spark+flink",
+        "——从平台构建到交互式数据分析",
+        "离线",
+        "实时",
+        "杨俊"
+      ],
+      "path": "实战大数据(Hadoop+Spark+Flink)——从平台构建到交互式数据分析(离线 实时) (杨俊).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/实战大数据(Hadoop+Spark+Flink)——从平台构建到交互式数据分析(离线 实时) (杨俊).pdf",
+      "cover": null
+    },
+    {
+      "id": "推荐系统实践.pdf",
+      "name": "推荐系统实践.pdf",
+      "title": "推荐系统实践",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "推荐系统实践"
+      ],
+      "path": "推荐系统实践.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/推荐系统实践.pdf",
+      "cover": null
+    },
+    {
+      "id": "机器学习理论导引 by 周志华 王魏 高尉 张利军 (z-lib.org).pdf",
+      "name": "机器学习理论导引 by 周志华 王魏 高尉 张利军 (z-lib.org).pdf",
+      "title": "机器学习理论导引 by 周志华 王魏 高尉 张利军 (z-lib.org)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "机器学习理论导引",
+        "周志华",
+        "王魏",
+        "高尉",
+        "张利军",
+        "lib",
+        "org"
+      ],
+      "path": "机器学习理论导引 by 周志华 王魏 高尉 张利军 (z-lib.org).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/机器学习理论导引 by 周志华 王魏 高尉 张利军 (z-lib.org).pdf",
+      "cover": null
+    },
+    {
+      "id": "机器翻译：基础与模型 (肖桐 朱靖波).pdf",
+      "name": "机器翻译：基础与模型 (肖桐 朱靖波).pdf",
+      "title": "机器翻译：基础与模型 (肖桐 朱靖波)",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "机器翻译：基础与模型",
+        "肖桐",
+        "朱靖波"
+      ],
+      "path": "机器翻译：基础与模型 (肖桐 朱靖波).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/机器翻译：基础与模型 (肖桐 朱靖波).pdf",
+      "cover": null
+    },
+    {
+      "id": "机器翻译：统计建模与深度学习方法.pdf",
+      "name": "机器翻译：统计建模与深度学习方法.pdf",
+      "title": "机器翻译：统计建模与深度学习方法",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "机器翻译：统计建模与深度学习方法"
+      ],
+      "path": "机器翻译：统计建模与深度学习方法.pdf",
+      "displayPath": ".",
+      "url": "/pdfs/机器翻译：统计建模与深度学习方法.pdf",
+      "cover": null
+    },
+    {
+      "id": "深入理解Flink：实时大数据处理实践 (余海峰).pdf",
+      "name": "深入理解Flink：实时大数据处理实践 (余海峰).pdf",
+      "title": "深入理解Flink：实时大数据处理实践 (余海峰)",
+      "author": null,
+      "pages": null,
+      "size": 132,
+      "mtime": 1759402269,
+      "tags": [
+        "深入理解flink：实时大数据处理实践",
+        "余海峰"
+      ],
+      "path": "深入理解Flink：实时大数据处理实践 (余海峰).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/深入理解Flink：实时大数据处理实践 (余海峰).pdf",
+      "cover": null
+    },
+    {
+      "id": "深度学习高手笔记 (刘岩).pdf",
+      "name": "深度学习高手笔记 (刘岩).pdf",
+      "title": "深度学习高手笔记 (刘岩)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "深度学习高手笔记",
+        "刘岩"
+      ],
+      "path": "深度学习高手笔记 (刘岩).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/深度学习高手笔记 (刘岩).pdf",
+      "cover": null
+    },
+    {
+      "id": "深度强化学习 .pdf",
+      "name": "深度强化学习 .pdf",
+      "title": "深度强化学习 ",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "深度强化学习"
+      ],
+      "path": "深度强化学习 .pdf",
+      "displayPath": ".",
+      "url": "/pdfs/深度强化学习 .pdf",
+      "cover": null
+    },
+    {
+      "id": "深度强化学习：基础、研究与应用 (董豪 等).pdf",
+      "name": "深度强化学习：基础、研究与应用 (董豪 等).pdf",
+      "title": "深度强化学习：基础、研究与应用 (董豪 等)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "深度强化学习：基础、研究与应用",
+        "董豪"
+      ],
+      "path": "深度强化学习：基础、研究与应用 (董豪 等).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/深度强化学习：基础、研究与应用 (董豪 等).pdf",
+      "cover": null
+    },
+    {
+      "id": "算法 第四版 Algorithms (4th Edition)(Chinese Edition) by (美)Robert Sedgewick，(美)Kevin Wayne著  谢路云译 (z-lib.org).pdf",
+      "name": "算法 第四版 Algorithms (4th Edition)(Chinese Edition) by (美)Robert Sedgewick，(美)Kevin Wayne著  谢路云译 (z-lib.org).pdf",
+      "title": "算法 第四版 Algorithms (4th Edition)(Chinese Edition) by (美)Robert Sedgewick，(美)Kevin Wayne著  谢路云译 (z-lib.org)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "算法",
+        "第四版",
+        "algorithms",
+        "4th",
+        "chinese",
+        "robert",
+        "sedgewick，",
+        "kevin",
+        "wayne著",
+        "谢路云译",
+        "lib",
+        "org"
+      ],
+      "path": "算法 第四版 Algorithms (4th Edition)(Chinese Edition) by (美)Robert Sedgewick，(美)Kevin Wayne著  谢路云译 (z-lib.org).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/算法 第四版 Algorithms (4th Edition)(Chinese Edition) by (美)Robert Sedgewick，(美)Kevin Wayne著  谢路云译 (z-lib.org).pdf",
+      "cover": null
+    },
+    {
+      "id": "自然语言处理导论 (张奇).pdf",
+      "name": "自然语言处理导论 (张奇).pdf",
+      "title": "自然语言处理导论 (张奇)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "自然语言处理导论",
+        "张奇"
+      ],
+      "path": "自然语言处理导论 (张奇).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/自然语言处理导论 (张奇).pdf",
+      "cover": null
+    },
+    {
+      "id": "量化交易：算法、分析、数据、模型和优化 ( etc.).pdf",
+      "name": "量化交易：算法、分析、数据、模型和优化 ( etc.).pdf",
+      "title": "量化交易：算法、分析、数据、模型和优化 ( etc.)",
+      "author": null,
+      "pages": null,
+      "size": 133,
+      "mtime": 1759402269,
+      "tags": [
+        "量化交易：算法、分析、数据、模型和优化",
+        "etc"
+      ],
+      "path": "量化交易：算法、分析、数据、模型和优化 ( etc.).pdf",
+      "displayPath": ".",
+      "url": "/pdfs/量化交易：算法、分析、数据、模型和优化 ( etc.).pdf",
+      "cover": null
     }
   ]
 }
